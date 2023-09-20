@@ -30,7 +30,16 @@ func Currencies() []string {
 
 type Partner struct {
 	ID          string
-	tradingName string
-	document    string
-	currency    Currency
+	TradingName string
+	Document    string
+	Currency    Currency
+}
+
+func NewPartner(ID, tradingName, document string, currency Currency) Partner {
+	return Partner{
+		ID:          ID,
+		TradingName: tradingName,
+		Document:    document,
+		Currency:    currency,
+	}
 }
