@@ -91,3 +91,25 @@ func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePa
 
 	return u.paymentRepository.Create(ctx, payment)
 }
+
+type UsecaseGetPayment struct {
+	paymentRepository domain.PaymentRepository
+}
+
+func NewUsecaseGetPayment(r domain.PaymentRepository) UsecaseGetPayment {
+	return UsecaseGetPayment{
+		paymentRepository: r,
+	}
+}
+
+func (u UsecaseGetPayment) Execute(ctx context.Context, ID string) (domain.Payment, error) {
+	paymentGot, err := u.paymentRepository.GetByID(ctx, ID)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	if paymentGot.ID != ID {
+		return domain.Payment{}, NewErrPaymentNotFound(ID)
+	}
+
+	return paymentGot, nil
+}

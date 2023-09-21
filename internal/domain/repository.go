@@ -9,5 +9,6 @@ type PartnerRepository interface {
 }
 
 type PaymentRepository interface {
+	GetByID(ctx context.Context, ID string) (Payment, error)
 	Create(ctx context.Context, payment Payment) (Payment, error)
 }

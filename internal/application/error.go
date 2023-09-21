@@ -31,3 +31,17 @@ func NewErrPartnerNotFound(id string) ErrPartnerNotFound {
 func (e ErrPartnerNotFound) Error() string {
 	return fmt.Sprintf("Partner not found by ID [ %s ]", e.id)
 }
+
+type ErrPaymentNotFound struct {
+	id string
+}
+
+func NewErrPaymentNotFound(id string) ErrPaymentNotFound {
+	return ErrPaymentNotFound{
+		id: id,
+	}
+}
+
+func (e ErrPaymentNotFound) Error() string {
+	return fmt.Sprintf("Payment not found by ID [ %s ]", e.id)
+}

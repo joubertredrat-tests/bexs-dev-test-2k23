@@ -333,3 +333,70 @@ func TestUsecaseCreatePayment(t *testing.T) {
 		})
 	}
 }
+
+func TestUsecaseGetPayment(t *testing.T) {
+	tests := []struct {
+		name              string
+		paymentRepository func(ctrl *gomock.Controller) domain.PaymentRepository
+		ID                string
+		paymentExpected   domain.Payment
+		errExpected       error
+	}{
+		{
+			name: "Test get payment with success",
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("01HAW44PR1XK7B027RSFE8SAAY")).
+					Return(domain.Payment{
+						ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+						PartnerID: "10",
+						Consumer: domain.Consumer{
+							Name:       "Oliver Tsubasa",
+							NationalID: "30243434597",
+						},
+						Amount: domain.Amount{
+							Value: "99.05",
+						},
+						ForeignAmount: domain.Amount{
+							Value: "470.49",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			ID: "01HAW44PR1XK7B027RSFE8SAAY",
+			paymentExpected: domain.Payment{
+				ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+				PartnerID: "10",
+				Consumer: domain.Consumer{
+					Name:       "Oliver Tsubasa",
+					NationalID: "30243434597",
+				},
+				Amount: domain.Amount{
+					Value: "99.05",
+				},
+				ForeignAmount: domain.Amount{
+					Value: "470.49",
+				},
+			},
+			errExpected: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.TODO()
+			ctrl := gomock.NewController(t)
+
+			usecase := application.NewUsecaseGetPayment(test.paymentRepository(ctrl))
+			paymentGot, errGot := usecase.Execute(ctx, test.ID)
+
+			assert.Equal(t, test.paymentExpected, paymentGot)
+			assert.Equal(t, test.errExpected, errGot)
+		})
+	}
+}

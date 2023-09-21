@@ -20,3 +20,10 @@ func TestErrPartnerNotFound(t *testing.T) {
 
 	assert.Equal(t, errExpected, errGot.Error())
 }
+
+func TestErrPaymentNotFound(t *testing.T) {
+	errExpected := "Payment not found by ID [ 01HAW44PR1XK7B027RSFE8SAAY ]"
+	errGot := application.NewErrPaymentNotFound("01HAW44PR1XK7B027RSFE8SAAY")
+
+	assert.Equal(t, errExpected, errGot.Error())
+}
