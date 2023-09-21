@@ -7,3 +7,7 @@ type PartnerRepository interface {
 	GetByDocument(ctx context.Context, document string) (Partner, error)
 	Create(ctx context.Context, partner Partner) (Partner, error)
 }
+
+type PaymentRepository interface {
+	Create(ctx context.Context, payment Payment) (Payment, error)
+}

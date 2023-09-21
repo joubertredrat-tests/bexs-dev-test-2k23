@@ -225,3 +225,111 @@ func TestUsecaseCreatePartner(t *testing.T) {
 		})
 	}
 }
+
+func TestUsecaseCreatePayment(t *testing.T) {
+	tests := []struct {
+		name              string
+		partnerRepository func(ctrl *gomock.Controller) domain.PartnerRepository
+		paymentRepository func(ctrl *gomock.Controller) domain.PaymentRepository
+		exchange          func(ctrl *gomock.Controller) domain.Exchange
+		input             application.UsecaseCreatePaymentInput
+		paymentExpected   domain.Payment
+		errExpected       error
+	}{
+		{
+			name: "Test create payment with success",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{
+						ID:          "10",
+						TradingName: "International Ecommerce",
+						Document:    "1284498339812/0001",
+						Currency: domain.Currency{
+							Value: "USD",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				consumer, _ := domain.NewConsumer("Oliver Tsubasa", "30243434597")
+				amount, _ := domain.NewAmount("99.05")
+				foreignAmount, _ := domain.NewAmount("470.49")
+
+				repository.
+					EXPECT().
+					Create(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{})).
+					Return(domain.Payment{
+						ID:            "01HAW44PR1XK7B027RSFE8SAAY",
+						PartnerID:     "10",
+						Consumer:      consumer,
+						Amount:        amount,
+						ForeignAmount: foreignAmount,
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				exchange := mock.NewMockExchange(ctrl)
+
+				amount, _ := domain.NewAmount("99.05")
+				currency, _ := domain.NewCurrency("USD")
+
+				exchange.
+					EXPECT().
+					Convert(gomock.Any(), gomock.Eq(amount), gomock.Eq(currency)).
+					Return(domain.Amount{
+						Value: "470.49",
+					}, nil).
+					Times(1)
+
+				return exchange
+			},
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:        "10",
+				Amount:           "99.05",
+				ConsumerName:     "Oliver Tsubasa",
+				ConsumerDocument: "30243434597",
+			},
+			paymentExpected: domain.Payment{
+				ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+				PartnerID: "10",
+				Consumer: domain.Consumer{
+					Name:       "Oliver Tsubasa",
+					NationalID: "30243434597",
+				},
+				Amount: domain.Amount{
+					Value: "99.05",
+				},
+				ForeignAmount: domain.Amount{
+					Value: "470.49",
+				},
+			},
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.TODO()
+			ctrl := gomock.NewController(t)
+
+			usecase := application.NewUsecaseCreatePayment(
+				test.partnerRepository(ctrl),
+				test.paymentRepository(ctrl),
+				test.exchange(ctrl),
+			)
+			paymentGot, errGot := usecase.Execute(ctx, test.input)
+
+			assert.Equal(t, test.paymentExpected, paymentGot)
+			assert.Equal(t, test.errExpected, errGot)
+		})
+	}
+}

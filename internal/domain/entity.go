@@ -1,5 +1,11 @@
 package domain
 
+import (
+	"fmt"
+	"regexp"
+	"time"
+)
+
 const (
 	CURRENCY_USD = "USD"
 	CURRENCY_EUR = "EUR"
@@ -42,4 +48,43 @@ func NewPartner(ID, tradingName, document string, currency Currency) Partner {
 		Document:    document,
 		Currency:    currency,
 	}
+}
+
+type Amount struct {
+	Value string
+}
+
+func NewAmount(value string) (Amount, error) {
+	if !regexp.MustCompile(`^[\d]{1,}[.][\d]{2}$`).MatchString(value) {
+		return Amount{}, fmt.Errorf("Amount expect valid value, got [ %s ]", value)
+	}
+
+	return Amount{
+		Value: value,
+	}, nil
+}
+
+type Consumer struct {
+	Name       string
+	NationalID string
+}
+
+func NewConsumer(name, nationalID string) (Consumer, error) {
+	if !regexp.MustCompile(`^[\d]{11}$`).MatchString(nationalID) {
+		return Consumer{}, fmt.Errorf("Consumer national ID expect 11 digits, got [ %s ]", nationalID)
+	}
+
+	return Consumer{
+		Name:       name,
+		NationalID: nationalID,
+	}, nil
+}
+
+type Payment struct {
+	ID            string
+	PartnerID     string
+	Amount        Amount
+	ForeignAmount Amount
+	Consumer      Consumer
+	Created       time.Time
 }

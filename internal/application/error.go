@@ -17,3 +17,17 @@ func NewErrPartnerAlreadyExists(field, value string) ErrPartnerAlreadyExists {
 func (e ErrPartnerAlreadyExists) Error() string {
 	return fmt.Sprintf("Partner already exists by [ %s ] with [ %s ]", e.field, e.value)
 }
+
+type ErrPartnerNotFound struct {
+	id string
+}
+
+func NewErrPartnerNotFound(id string) ErrPartnerNotFound {
+	return ErrPartnerNotFound{
+		id: id,
+	}
+}
+
+func (e ErrPartnerNotFound) Error() string {
+	return fmt.Sprintf("Partner not found by ID [ %s ]", e.id)
+}

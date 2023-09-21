@@ -13,3 +13,10 @@ func TestErrPartnerAlreadyExists(t *testing.T) {
 
 	assert.Equal(t, errExpected, errGot.Error())
 }
+
+func TestErrPartnerNotFound(t *testing.T) {
+	errExpected := "Partner not found by ID [ 10 ]"
+	errGot := application.NewErrPartnerNotFound("10")
+
+	assert.Equal(t, errExpected, errGot.Error())
+}

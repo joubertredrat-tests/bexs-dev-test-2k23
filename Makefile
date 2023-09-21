@@ -9,3 +9,4 @@ coverage-console: tests ;
 
 generate-mocks:
 	mockgen -package=mock -source=internal/domain/repository.go > pkg/mock/domain_repository_mock.go
+	mockgen -package=mock -source=internal/domain/exchange.go > pkg/mock/domain_exchange_mock.go

@@ -40,3 +40,54 @@ func (u UsecaseCreatePartner) Execute(ctx context.Context, input UsecaseCreatePa
 	partner := domain.NewPartner(input.ID, input.TradingName, input.Document, currency)
 	return u.partnerRepository.Create(ctx, partner)
 }
+
+type UsecaseCreatePayment struct {
+	partnerRepository domain.PartnerRepository
+	paymentRepository domain.PaymentRepository
+	exchange          domain.Exchange
+}
+
+func NewUsecaseCreatePayment(
+	ptr domain.PartnerRepository,
+	pyr domain.PaymentRepository,
+	ex domain.Exchange,
+) UsecaseCreatePayment {
+	return UsecaseCreatePayment{
+		partnerRepository: ptr,
+		paymentRepository: pyr,
+		exchange:          ex,
+	}
+}
+
+func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePaymentInput) (domain.Payment, error) {
+	partnerGot, err := u.partnerRepository.GetByID(ctx, input.PartnerID)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	if partnerGot.ID != input.PartnerID {
+		return domain.Payment{}, NewErrPartnerNotFound(input.PartnerID)
+	}
+
+	consumer, err := domain.NewConsumer(input.ConsumerName, input.ConsumerDocument)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+
+	amount, err := domain.NewAmount(input.Amount)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	foreignAmount, err := u.exchange.Convert(ctx, amount, partnerGot.Currency)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+
+	payment := domain.Payment{
+		PartnerID:     input.PartnerID,
+		Consumer:      consumer,
+		Amount:        amount,
+		ForeignAmount: foreignAmount,
+	}
+
+	return u.paymentRepository.Create(ctx, payment)
+}
