@@ -136,3 +136,18 @@ func (mr *MockPaymentRepositoryMockRecorder) GetByID(ctx, ID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockPaymentRepository)(nil).GetByID), ctx, ID)
 }
+
+// List mocks base method.
+func (m *MockPaymentRepository) List(ctx context.Context, paginaton domain.Pagination) ([]domain.Payment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "List", ctx, paginaton)
+	ret0, _ := ret[0].([]domain.Payment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// List indicates an expected call of List.
+func (mr *MockPaymentRepositoryMockRecorder) List(ctx, paginaton any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockPaymentRepository)(nil).List), ctx, paginaton)
+}

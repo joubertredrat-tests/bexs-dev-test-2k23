@@ -113,3 +113,17 @@ func (u UsecaseGetPayment) Execute(ctx context.Context, ID string) (domain.Payme
 
 	return paymentGot, nil
 }
+
+type UsecaseListPayments struct {
+	paymentRepository domain.PaymentRepository
+}
+
+func NewUsecaseListPayments(r domain.PaymentRepository) UsecaseListPayments {
+	return UsecaseListPayments{
+		paymentRepository: r,
+	}
+}
+
+func (u UsecaseListPayments) Execute(ctx context.Context, pagination domain.Pagination) ([]domain.Payment, error) {
+	return u.paymentRepository.List(ctx, pagination)
+}

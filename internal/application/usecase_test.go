@@ -400,3 +400,104 @@ func TestUsecaseGetPayment(t *testing.T) {
 		})
 	}
 }
+
+func TestUsecaseListPayments(t *testing.T) {
+	tests := []struct {
+		name              string
+		paymentRepository func(ctrl *gomock.Controller) domain.PaymentRepository
+		pagination        domain.Pagination
+		paymentsExpected  []domain.Payment
+		errExpected       error
+	}{
+		{
+			name: "Test list payments with success",
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				pagination := domain.NewPagination(0, 10)
+
+				repository.
+					EXPECT().
+					List(gomock.Any(), gomock.Eq(pagination)).
+					Return([]domain.Payment{
+						domain.Payment{
+							ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+							PartnerID: "10",
+							Consumer: domain.Consumer{
+								Name:       "Oliver Tsubasa",
+								NationalID: "30243434597",
+							},
+							Amount: domain.Amount{
+								Value: "99.05",
+							},
+							ForeignAmount: domain.Amount{
+								Value: "470.49",
+							},
+						},
+						domain.Payment{
+							ID:        "01HAW9KE9342952B9X9FAC147G",
+							PartnerID: "10",
+							Consumer: domain.Consumer{
+								Name:       "Oliver Tsubasa",
+								NationalID: "30243434597",
+							},
+							Amount: domain.Amount{
+								Value: "99.05",
+							},
+							ForeignAmount: domain.Amount{
+								Value: "470.49",
+							},
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			pagination: domain.NewPagination(0, 10),
+			paymentsExpected: []domain.Payment{
+				domain.Payment{
+					ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+					PartnerID: "10",
+					Consumer: domain.Consumer{
+						Name:       "Oliver Tsubasa",
+						NationalID: "30243434597",
+					},
+					Amount: domain.Amount{
+						Value: "99.05",
+					},
+					ForeignAmount: domain.Amount{
+						Value: "470.49",
+					},
+				},
+				domain.Payment{
+					ID:        "01HAW9KE9342952B9X9FAC147G",
+					PartnerID: "10",
+					Consumer: domain.Consumer{
+						Name:       "Oliver Tsubasa",
+						NationalID: "30243434597",
+					},
+					Amount: domain.Amount{
+						Value: "99.05",
+					},
+					ForeignAmount: domain.Amount{
+						Value: "470.49",
+					},
+				},
+			},
+			errExpected: nil,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctx := context.TODO()
+			ctrl := gomock.NewController(t)
+
+			usecase := application.NewUsecaseListPayments(test.paymentRepository(ctrl))
+			paymentsGot, errGot := usecase.Execute(ctx, test.pagination)
+
+			assert.Equal(t, test.paymentsExpected, paymentsGot)
+			assert.Equal(t, test.errExpected, errGot)
+		})
+	}
+}
