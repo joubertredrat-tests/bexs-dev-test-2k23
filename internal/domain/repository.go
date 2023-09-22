@@ -1,6 +1,9 @@
 package domain
 
-import "context"
+import (
+	"context"
+	"time"
+)
 
 type Pagination struct {
 	Offset uint
@@ -22,6 +25,7 @@ type PartnerRepository interface {
 
 type PaymentRepository interface {
 	GetByID(ctx context.Context, ID string) (Payment, error)
+	GetDuplicated(ctx context.Context, payment Payment, seconds time.Time) (Payment, error)
 	List(ctx context.Context, paginaton Pagination) ([]Payment, error)
 	Create(ctx context.Context, payment Payment) (Payment, error)
 }

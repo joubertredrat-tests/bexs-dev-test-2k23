@@ -12,6 +12,7 @@ import (
 	context "context"
 	domain "joubertredrat/bexs-dev-test-2k23/internal/domain"
 	reflect "reflect"
+	time "time"
 
 	gomock "go.uber.org/mock/gomock"
 )
@@ -135,6 +136,21 @@ func (m *MockPaymentRepository) GetByID(ctx context.Context, ID string) (domain.
 func (mr *MockPaymentRepositoryMockRecorder) GetByID(ctx, ID any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetByID", reflect.TypeOf((*MockPaymentRepository)(nil).GetByID), ctx, ID)
+}
+
+// GetDuplicated mocks base method.
+func (m *MockPaymentRepository) GetDuplicated(ctx context.Context, payment domain.Payment, seconds time.Time) (domain.Payment, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetDuplicated", ctx, payment, seconds)
+	ret0, _ := ret[0].(domain.Payment)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// GetDuplicated indicates an expected call of GetDuplicated.
+func (mr *MockPaymentRepositoryMockRecorder) GetDuplicated(ctx, payment, seconds any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetDuplicated", reflect.TypeOf((*MockPaymentRepository)(nil).GetDuplicated), ctx, payment, seconds)
 }
 
 // List mocks base method.

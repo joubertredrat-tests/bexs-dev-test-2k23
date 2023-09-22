@@ -1,6 +1,9 @@
 package application
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 type ErrPartnerAlreadyExists struct {
 	field string
@@ -45,3 +48,5 @@ func NewErrPaymentNotFound(id string) ErrPaymentNotFound {
 func (e ErrPaymentNotFound) Error() string {
 	return fmt.Sprintf("Payment not found by ID [ %s ]", e.id)
 }
+
+var ErrPaymentDuplicated = errors.New("Payment duplicated")

@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"joubertredrat/bexs-dev-test-2k23/internal/domain"
+	"time"
 )
 
 type UsecaseCreatePartner struct {
@@ -45,17 +46,20 @@ type UsecaseCreatePayment struct {
 	partnerRepository domain.PartnerRepository
 	paymentRepository domain.PaymentRepository
 	exchange          domain.Exchange
+	duplicatedSeconds uint
 }
 
 func NewUsecaseCreatePayment(
 	ptr domain.PartnerRepository,
 	pyr domain.PaymentRepository,
 	ex domain.Exchange,
+	ds uint,
 ) UsecaseCreatePayment {
 	return UsecaseCreatePayment{
 		partnerRepository: ptr,
 		paymentRepository: pyr,
 		exchange:          ex,
+		duplicatedSeconds: ds,
 	}
 }
 
@@ -87,6 +91,17 @@ func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePa
 		Consumer:      consumer,
 		Amount:        amount,
 		ForeignAmount: foreignAmount,
+	}
+
+	now := time.Now()
+	seconds := now.Add(-time.Second * time.Duration(u.duplicatedSeconds))
+
+	paymentDuplcated, err := u.paymentRepository.GetDuplicated(ctx, payment, seconds)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	if paymentDuplcated.ID != "" {
+		return domain.Payment{}, ErrPaymentDuplicated
 	}
 
 	return u.paymentRepository.Create(ctx, payment)

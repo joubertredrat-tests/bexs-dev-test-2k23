@@ -7,6 +7,7 @@ import (
 	"joubertredrat/bexs-dev-test-2k23/internal/domain"
 	"joubertredrat/bexs-dev-test-2k23/pkg/mock"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
@@ -232,6 +233,7 @@ func TestUsecaseCreatePayment(t *testing.T) {
 		partnerRepository func(ctrl *gomock.Controller) domain.PartnerRepository
 		paymentRepository func(ctrl *gomock.Controller) domain.PaymentRepository
 		exchange          func(ctrl *gomock.Controller) domain.Exchange
+		duplicatedSeconds uint
 		input             application.UsecaseCreatePaymentInput
 		paymentExpected   domain.Payment
 		errExpected       error
@@ -259,19 +261,28 @@ func TestUsecaseCreatePayment(t *testing.T) {
 			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
 				repository := mock.NewMockPaymentRepository(ctrl)
 
-				consumer, _ := domain.NewConsumer("Oliver Tsubasa", "30243434597")
-				amount, _ := domain.NewAmount("99.05")
-				foreignAmount, _ := domain.NewAmount("470.49")
+				repository.
+					EXPECT().
+					GetDuplicated(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{}), gomock.AssignableToTypeOf(time.Time{})).
+					Return(domain.Payment{}, nil).
+					Times(1)
 
 				repository.
 					EXPECT().
 					Create(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{})).
 					Return(domain.Payment{
-						ID:            "01HAW44PR1XK7B027RSFE8SAAY",
-						PartnerID:     "10",
-						Consumer:      consumer,
-						Amount:        amount,
-						ForeignAmount: foreignAmount,
+						ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+						PartnerID: "10",
+						Consumer: domain.Consumer{
+							Name:       "Oliver Tsubasa",
+							NationalID: "30243434597",
+						},
+						Amount: domain.Amount{
+							Value: "99.05",
+						},
+						ForeignAmount: domain.Amount{
+							Value: "470.49",
+						},
 					}, nil).
 					Times(1)
 
@@ -293,6 +304,7 @@ func TestUsecaseCreatePayment(t *testing.T) {
 
 				return exchange
 			},
+			duplicatedSeconds: 120,
 			input: application.UsecaseCreatePaymentInput{
 				PartnerID:        "10",
 				Amount:           "99.05",
@@ -325,6 +337,7 @@ func TestUsecaseCreatePayment(t *testing.T) {
 				test.partnerRepository(ctrl),
 				test.paymentRepository(ctrl),
 				test.exchange(ctrl),
+				test.duplicatedSeconds,
 			)
 			paymentGot, errGot := usecase.Execute(ctx, test.input)
 
