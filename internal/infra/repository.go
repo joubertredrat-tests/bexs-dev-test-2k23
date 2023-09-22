@@ -18,15 +18,94 @@ func NewPartnerRepositoryMysql(db *sql.DB) PartnerRepositoryMysql {
 }
 
 func (r PartnerRepositoryMysql) GetByID(ctx context.Context, ID string) (domain.Partner, error) {
-	return domain.Partner{}, nil
+	stmt, err := r.db.PrepareContext(
+		ctx,
+		`SELECT
+			id,
+			trading_name,
+			document,
+			currency
+		FROM partners
+		WHERE id = ?`,
+	)
+	if err != nil {
+		return domain.Partner{}, err
+	}
+	defer stmt.Close()
+
+	var p domain.Partner
+	row := stmt.QueryRowContext(ctx, ID)
+	errs := row.Scan(
+		&p.ID,
+		&p.TradingName,
+		&p.Document,
+		&p.Currency.Value,
+	)
+	if errs != nil {
+		switch {
+		case errs == sql.ErrNoRows:
+			return domain.Partner{}, nil
+		}
+		return domain.Partner{}, err
+	}
+
+	return p, nil
 }
 
 func (r PartnerRepositoryMysql) GetByDocument(ctx context.Context, document string) (domain.Partner, error) {
-	return domain.Partner{}, nil
+	stmt, err := r.db.PrepareContext(
+		ctx,
+		`SELECT
+			id,
+			trading_name,
+			document,
+			currency
+		FROM partners
+		WHERE document = ?`,
+	)
+	if err != nil {
+		return domain.Partner{}, err
+	}
+	defer stmt.Close()
+
+	var p domain.Partner
+	row := stmt.QueryRowContext(ctx, document)
+	errs := row.Scan(
+		&p.ID,
+		&p.TradingName,
+		&p.Document,
+		&p.Currency.Value,
+	)
+	if errs != nil {
+		switch {
+		case errs == sql.ErrNoRows:
+			return domain.Partner{}, nil
+		}
+		return domain.Partner{}, err
+	}
+
+	return p, nil
 }
 
 func (r PartnerRepositoryMysql) Create(ctx context.Context, partner domain.Partner) (domain.Partner, error) {
-	return domain.Partner{}, nil
+	_, err := r.db.ExecContext(
+		context.Background(),
+		`INSERT INTO partners (
+			id,
+			trading_name,
+			document,
+			currency
+		) VALUES (?, ?, ?, ?)`,
+		partner.ID,
+		partner.TradingName,
+		partner.Document,
+		partner.Currency.Value,
+	)
+	if err != nil {
+		return domain.Partner{}, err
+	}
+
+	return partner, nil
 }
 
 type PaymentRepositoryMysql struct {

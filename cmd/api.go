@@ -49,7 +49,11 @@ func getApiCommand() *cli.Command {
 			infra.RegisterCustomValidator()
 			{
 				ra.GET("/status", apiBaseController.HandleStatus)
-				ra.POST("/partners", partnerController.HandleCreate(usecaseCreatePartner))
+				ra.POST(
+					"/partners",
+					infra.JSONBodyMiddleware(),
+					partnerController.HandleCreate(usecaseCreatePartner),
+				)
 			}
 
 			return r.Run(fmt.Sprintf("%s:%s", config.ApiHost, config.ApiPort))

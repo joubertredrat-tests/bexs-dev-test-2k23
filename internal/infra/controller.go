@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"joubertredrat/bexs-dev-test-2k23/internal/application"
+	"joubertredrat/bexs-dev-test-2k23/internal/domain"
 	"net/http"
 	"reflect"
 	"strings"
@@ -46,8 +47,42 @@ func NewPartnerController() PartnerController {
 
 func (c PartnerController) HandleCreate(usecase application.UsecaseCreatePartner) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		ctx.JSON(http.StatusCreated, gin.H{
-			"handle": "create",
+		var request CreatePartnerRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			responseWithError(ctx, err)
+			return
+		}
+
+		partner, err := usecase.Execute(ctx, application.UsecaseCreatePartnerInput{
+			ID:          request.ID,
+			TradingName: request.TradingName,
+			Document:    request.Document,
+			Currency:    request.Currency,
+		})
+
+		if err != nil {
+			switch err.(type) {
+			case domain.ErrInvalidCurrency:
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"error": err.Error(),
+				})
+			case application.ErrPartnerAlreadyExists:
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"error": err.Error(),
+				})
+			default:
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": "internal server error",
+				})
+			}
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, CreatePartnerResponse{
+			ID:          partner.ID,
+			TradingName: partner.TradingName,
+			Document:    partner.Document,
+			Currency:    partner.Currency.Value,
 		})
 	}
 }
