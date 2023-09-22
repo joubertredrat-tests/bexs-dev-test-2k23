@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"joubertredrat/bexs-dev-test-2k23/internal/application"
 	"joubertredrat/bexs-dev-test-2k23/internal/infra"
 
 	"github.com/gin-gonic/gin"
@@ -24,9 +25,32 @@ func getApiCommand() *cli.Command {
 				return err
 			}
 
+			db, err := infra.GetDatabaseConnection(infra.GetMysqlDSN(
+				config.DatabaseHost,
+				config.DatabasePort,
+				config.DatabaseName,
+				config.DatabaseUser,
+				config.DatabasePassword,
+			))
+			if err != nil {
+				return err
+			}
+
+			partnerRepository := infra.NewPartnerRepositoryMysql(db)
+
+			usecaseCreatePartner := application.NewUsecaseCreatePartner(partnerRepository)
+
 			apiBaseController := infra.NewApiBaseController()
+			partnerController := infra.NewPartnerController()
 
 			r.NoRoute(apiBaseController.HandleNotFound)
+
+			ra := r.Group("/api")
+			infra.RegisterCustomValidator()
+			{
+				ra.GET("/status", apiBaseController.HandleStatus)
+				ra.POST("/partners", partnerController.HandleCreate(usecaseCreatePartner))
+			}
 
 			return r.Run(fmt.Sprintf("%s:%s", config.ApiHost, config.ApiPort))
 		},
