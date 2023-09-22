@@ -306,10 +306,10 @@ func TestUsecaseCreatePayment(t *testing.T) {
 			},
 			duplicatedSeconds: 120,
 			input: application.UsecaseCreatePaymentInput{
-				PartnerID:        "10",
-				Amount:           "99.05",
-				ConsumerName:     "Oliver Tsubasa",
-				ConsumerDocument: "30243434597",
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
 			},
 			paymentExpected: domain.Payment{
 				ID:        "01HAW44PR1XK7B027RSFE8SAAY",

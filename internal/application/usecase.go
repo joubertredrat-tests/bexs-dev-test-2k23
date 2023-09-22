@@ -72,7 +72,7 @@ func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePa
 		return domain.Payment{}, NewErrPartnerNotFound(input.PartnerID)
 	}
 
-	consumer, err := domain.NewConsumer(input.ConsumerName, input.ConsumerDocument)
+	consumer, err := domain.NewConsumer(input.ConsumerName, input.ConsumerNationalID)
 	if err != nil {
 		return domain.Payment{}, err
 	}

@@ -8,8 +8,8 @@ type UsecaseCreatePartnerInput struct {
 }
 
 type UsecaseCreatePaymentInput struct {
-	PartnerID        string
-	Amount           string
-	ConsumerName     string
-	ConsumerDocument string
+	PartnerID          string
+	Amount             string
+	ConsumerName       string
+	ConsumerNationalID string
 }
