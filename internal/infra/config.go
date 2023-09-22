@@ -12,14 +12,17 @@ const (
 )
 
 type Config struct {
-	ApiHost                  string `env:"API_HOST,required"`
-	ApiPort                  string `env:"API_PORT,required"`
-	DatabaseHost             string `env:"DATABASE_HOST,required"`
-	DatabasePort             string `env:"DATABASE_PORT,required"`
-	DatabaseName             string `env:"DATABASE_NAME,required"`
-	DatabaseUser             string `env:"DATABASE_USER,required"`
-	DatabasePassword         string `env:"DATABASE_PASSWORD,required"`
-	PaymentDuplicatedSeconds uint   `env:"PAYMENT_DUPLICATED_SECONDS,required"`
+	ApiHost                  string  `env:"API_HOST,required"`
+	ApiPort                  string  `env:"API_PORT,required"`
+	DatabaseHost             string  `env:"DATABASE_HOST,required"`
+	DatabasePort             string  `env:"DATABASE_PORT,required"`
+	DatabaseName             string  `env:"DATABASE_NAME,required"`
+	DatabaseUser             string  `env:"DATABASE_USER,required"`
+	DatabasePassword         string  `env:"DATABASE_PASSWORD,required"`
+	PaymentDuplicatedSeconds uint    `env:"PAYMENT_DUPLICATED_SECONDS,required"`
+	RateUsd                  float64 `env:"RATE_USD,required"`
+	RateEur                  float64 `env:"RATE_EUR,required"`
+	RateGbp                  float64 `env:"RATE_GBP,required"`
 }
 
 func NewConfig() (Config, error) {

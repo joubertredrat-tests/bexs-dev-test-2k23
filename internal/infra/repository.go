@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"joubertredrat/bexs-dev-test-2k23/internal/domain"
 	"time"
+
+	"github.com/oklog/ulid/v2"
 )
 
 type PartnerRepositoryMysql struct {
@@ -119,7 +121,44 @@ func NewPaymentRepositoryMysql(db *sql.DB) PaymentRepositoryMysql {
 }
 
 func (r PaymentRepositoryMysql) GetByID(ctx context.Context, ID string) (domain.Payment, error) {
-	return domain.Payment{}, nil
+	stmt, err := r.db.PrepareContext(
+		ctx,
+		`SELECT
+			id,
+			partner_id,
+			amount,
+			foreign_amount,
+			consumer_name,
+			consumer_national_id,
+			created_at
+		FROM payments
+		WHERE id = ?`,
+	)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	defer stmt.Close()
+
+	var p domain.Payment
+	row := stmt.QueryRowContext(ctx, ID)
+	errs := row.Scan(
+		&p.ID,
+		&p.PartnerID,
+		&p.Amount.Value,
+		&p.ForeignAmount.Value,
+		&p.Consumer.Name,
+		&p.Consumer.NationalID,
+		&p.Created,
+	)
+	if errs != nil {
+		switch {
+		case errs == sql.ErrNoRows:
+			return domain.Payment{}, nil
+		}
+		return domain.Payment{}, err
+	}
+
+	return p, nil
 }
 
 func (r PaymentRepositoryMysql) GetDuplicated(ctx context.Context, payment domain.Payment, seconds time.Time) (domain.Payment, error) {
@@ -131,5 +170,31 @@ func (r PaymentRepositoryMysql) List(ctx context.Context, paginaton domain.Pagin
 }
 
 func (r PaymentRepositoryMysql) Create(ctx context.Context, payment domain.Payment) (domain.Payment, error) {
-	return domain.Payment{}, nil
+	payment.ID = ulid.Make().String()
+	payment.Created = time.Now()
+
+	_, err := r.db.ExecContext(
+		context.Background(),
+		`INSERT INTO payments (
+			id,
+			partner_id,
+			amount,
+			foreign_amount,
+			consumer_name,
+			consumer_national_id,
+			created_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		payment.ID,
+		payment.PartnerID,
+		payment.Amount.Value,
+		payment.ForeignAmount.Value,
+		payment.Consumer.Name,
+		payment.Consumer.NationalID,
+		DatetimeCanonical(&payment.Created),
+	)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+
+	return payment, nil
 }

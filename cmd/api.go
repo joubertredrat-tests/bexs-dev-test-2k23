@@ -37,11 +37,21 @@ func getApiCommand() *cli.Command {
 			}
 
 			partnerRepository := infra.NewPartnerRepositoryMysql(db)
+			paymentRepository := infra.NewPaymentRepositoryMysql(db)
+
+			exchangeStatic := infra.NewExchangeStatic(config.RateUsd, config.RateEur, config.RateGbp)
 
 			usecaseCreatePartner := application.NewUsecaseCreatePartner(partnerRepository)
+			usecaseCreatePayment := application.NewUsecaseCreatePayment(
+				partnerRepository,
+				paymentRepository,
+				exchangeStatic,
+				config.PaymentDuplicatedSeconds,
+			)
 
 			apiBaseController := infra.NewApiBaseController()
 			partnerController := infra.NewPartnerController()
+			paymentController := infra.NewPaymentController()
 
 			r.NoRoute(apiBaseController.HandleNotFound)
 
@@ -54,6 +64,14 @@ func getApiCommand() *cli.Command {
 					infra.JSONBodyMiddleware(),
 					partnerController.HandleCreate(usecaseCreatePartner),
 				)
+				rp := ra.Group("/payments")
+				{
+					rp.POST(
+						"",
+						infra.JSONBodyMiddleware(),
+						paymentController.HandleCreate(usecaseCreatePayment),
+					)
+				}
 			}
 
 			return r.Run(fmt.Sprintf("%s:%s", config.ApiHost, config.ApiPort))

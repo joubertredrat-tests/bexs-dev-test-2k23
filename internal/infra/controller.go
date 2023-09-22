@@ -67,7 +67,7 @@ func (c PartnerController) HandleCreate(usecase application.UsecaseCreatePartner
 					"error": err.Error(),
 				})
 			case application.ErrPartnerAlreadyExists:
-				ctx.JSON(http.StatusBadRequest, gin.H{
+				ctx.JSON(http.StatusUnprocessableEntity, gin.H{
 					"error": err.Error(),
 				})
 			default:
@@ -83,6 +83,56 @@ func (c PartnerController) HandleCreate(usecase application.UsecaseCreatePartner
 			TradingName: partner.TradingName,
 			Document:    partner.Document,
 			Currency:    partner.Currency.Value,
+		})
+	}
+}
+
+type PaymentController struct {
+}
+
+func NewPaymentController() PaymentController {
+	return PaymentController{}
+}
+
+func (c PaymentController) HandleCreate(usecase application.UsecaseCreatePayment) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		var request CreatePaymentRequest
+		if err := ctx.ShouldBindJSON(&request); err != nil {
+			responseWithError(ctx, err)
+			return
+		}
+
+		payment, err := usecase.Execute(ctx, application.UsecaseCreatePaymentInput{
+			PartnerID:          request.PartnerID,
+			Amount:             request.Amount,
+			ConsumerName:       request.Consumer.Name,
+			ConsumerNationalID: request.Consumer.NationalID,
+		})
+
+		if err != nil {
+			fmt.Println(err)
+			switch err.(type) {
+			case application.ErrPartnerNotFound:
+				ctx.JSON(http.StatusBadRequest, gin.H{
+					"error": err.Error(),
+				})
+			default:
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": "internal server error",
+				})
+			}
+			return
+		}
+
+		ctx.JSON(http.StatusCreated, CreatePaymentResponse{
+			ID:            payment.ID,
+			PartnerID:     payment.PartnerID,
+			Amount:        payment.Amount.Value,
+			ForeignAmount: payment.ForeignAmount.Value,
+			Consumer: ConsumerResponse{
+				Name:       payment.Consumer.Name,
+				NationalID: payment.Consumer.NationalID,
+			},
 		})
 	}
 }

@@ -6,3 +6,14 @@ type CreatePartnerRequest struct {
 	Document    string `json:"document" binding:"required"`
 	Currency    string `json:"currency" binding:"required"`
 }
+
+type CreatePaymentRequest struct {
+	PartnerID string          `json:"partner_id" binding:"required"`
+	Amount    string          `json:"amount" binding:"required"`
+	Consumer  ConsumerRequest `json:"consumer" binding:"required"`
+}
+
+type ConsumerRequest struct {
+	Name       string `json:"name" binding:"required"`
+	NationalID string `json:"national_id" binding:"required"`
+}
