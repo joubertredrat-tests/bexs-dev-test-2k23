@@ -750,6 +750,40 @@ func TestUsecaseGetPayment(t *testing.T) {
 			},
 			errExpected: nil,
 		},
+		{
+			name: "Test get payment with unknown error on get by id from payment repository",
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("01HAW44PR1XK7B027RSFE8SAAY")).
+					Return(domain.Payment{}, errors.New("database gone")).
+					Times(1)
+
+				return repository
+			},
+			ID:              "01HAW44PR1XK7B027RSFE8SAAY",
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("database gone"),
+		},
+		{
+			name: "Test get payment with payment ID not found from repository",
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("01HAW44PR1XK7B027RSFE8SAAY")).
+					Return(domain.Payment{}, nil).
+					Times(1)
+
+				return repository
+			},
+			ID:              "01HAW44PR1XK7B027RSFE8SAAY",
+			paymentExpected: domain.Payment{},
+			errExpected:     application.NewErrPaymentNotFound("01HAW44PR1XK7B027RSFE8SAAY"),
+		},
 	}
 
 	for _, test := range tests {
@@ -850,6 +884,25 @@ func TestUsecaseListPayments(t *testing.T) {
 				},
 			},
 			errExpected: nil,
+		},
+		{
+			name: "Test list payments with unknown error on list from payment repository",
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				pagination := domain.NewPagination(0, 10)
+
+				repository.
+					EXPECT().
+					List(gomock.Any(), gomock.Eq(pagination)).
+					Return([]domain.Payment{}, errors.New("database gone")).
+					Times(1)
+
+				return repository
+			},
+			pagination:       domain.NewPagination(0, 10),
+			paymentsExpected: []domain.Payment{},
+			errExpected:      errors.New("database gone"),
 		},
 	}
 
