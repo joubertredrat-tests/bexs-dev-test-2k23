@@ -27,3 +27,10 @@ func TestErrPaymentNotFound(t *testing.T) {
 
 	assert.Equal(t, errExpected, errGot.Error())
 }
+
+func TestErrPaymentDuplicated(t *testing.T) {
+	errExpected := "Payment duplicated for partner ID [ 10 ] consumer national ID [ 30243434597 ] and amount [ 99.05 ]"
+	errGot := application.NewErrPaymentDuplicated("10", "30243434597", "99.05")
+
+	assert.Equal(t, errExpected, errGot.Error())
+}

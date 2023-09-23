@@ -162,7 +162,50 @@ func (r PaymentRepositoryMysql) GetByID(ctx context.Context, ID string) (domain.
 }
 
 func (r PaymentRepositoryMysql) GetDuplicated(ctx context.Context, payment domain.Payment, seconds time.Time) (domain.Payment, error) {
-	return domain.Payment{}, nil
+	stmt, err := r.db.PrepareContext(
+		ctx,
+		`SELECT
+			id,
+			partner_id,
+			amount,
+			foreign_amount,
+			consumer_name,
+			consumer_national_id,
+			created_at
+		FROM payments
+		WHERE partner_id = ? AND consumer_national_id = ? AND amount LIKE ? AND created_at >= ?`,
+	)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	defer stmt.Close()
+
+	var p domain.Payment
+	row := stmt.QueryRowContext(
+		ctx,
+		payment.PartnerID,
+		payment.Consumer.NationalID,
+		payment.Amount.Value,
+		DatetimeCanonical(&seconds),
+	)
+	errs := row.Scan(
+		&p.ID,
+		&p.PartnerID,
+		&p.Amount.Value,
+		&p.ForeignAmount.Value,
+		&p.Consumer.Name,
+		&p.Consumer.NationalID,
+		&p.Created,
+	)
+	if errs != nil {
+		switch {
+		case errs == sql.ErrNoRows:
+			return domain.Payment{}, nil
+		}
+		return domain.Payment{}, err
+	}
+
+	return p, nil
 }
 
 func (r PaymentRepositoryMysql) List(ctx context.Context, paginaton domain.Pagination) ([]domain.Payment, error) {

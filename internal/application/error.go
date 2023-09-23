@@ -1,7 +1,6 @@
 package application
 
 import (
-	"errors"
 	"fmt"
 )
 
@@ -49,4 +48,25 @@ func (e ErrPaymentNotFound) Error() string {
 	return fmt.Sprintf("Payment not found by ID [ %s ]", e.id)
 }
 
-var ErrPaymentDuplicated = errors.New("Payment duplicated")
+type ErrPaymentDuplicated struct {
+	partnerID          string
+	consumerNationalID string
+	amount             string
+}
+
+func NewErrPaymentDuplicated(partnerID, consumerNationalID, amount string) ErrPaymentDuplicated {
+	return ErrPaymentDuplicated{
+		partnerID:          partnerID,
+		consumerNationalID: consumerNationalID,
+		amount:             amount,
+	}
+}
+
+func (e ErrPaymentDuplicated) Error() string {
+	return fmt.Sprintf(
+		"Payment duplicated for partner ID [ %s ] consumer national ID [ %s ] and amount [ %s ]",
+		e.partnerID,
+		e.consumerNationalID,
+		e.amount,
+	)
+}

@@ -101,7 +101,7 @@ func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePa
 		return domain.Payment{}, err
 	}
 	if paymentDuplcated.ID != "" {
-		return domain.Payment{}, ErrPaymentDuplicated
+		return domain.Payment{}, NewErrPaymentDuplicated(payment.PartnerID, payment.Consumer.NationalID, payment.Amount.Value)
 	}
 
 	return u.paymentRepository.Create(ctx, payment)

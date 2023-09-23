@@ -116,6 +116,10 @@ func (c PaymentController) HandleCreate(usecase application.UsecaseCreatePayment
 				ctx.JSON(http.StatusBadRequest, gin.H{
 					"error": err.Error(),
 				})
+			case application.ErrPaymentDuplicated:
+				ctx.JSON(http.StatusUnprocessableEntity, gin.H{
+					"error": err.Error(),
+				})
 			default:
 				ctx.JSON(http.StatusInternalServerError, gin.H{
 					"error": "internal server error",
