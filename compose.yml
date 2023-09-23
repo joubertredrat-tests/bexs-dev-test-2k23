@@ -1,6 +1,37 @@
 version: "3.9"
 
 services:
+  payments:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      API_HOST: 0.0.0.0
+      API_PORT: 9007
+      DATABASE_HOST: db.ms.local
+      DATABASE_PORT: 3306
+      DATABASE_NAME: bexs_payments
+      DATABASE_USER: root
+      DATABASE_PASSWORD: 13152c0e-ce51-4e03-bebd-8e2c4fb359bf
+      PAYMENT_DUPLICATED_SECONDS: 60
+      RATE_USD: 4.75
+      RATE_EUR: 5.50
+      RATE_GBP: 6.35
+    networks:
+      ms_network:
+        aliases:
+          - transaction.ms.local
+    hostname: transaction.ms.local
+    ports:
+      - 9007:9007
+    healthcheck:
+      test: ["CMD", "nc", "-vz", "127.0.0.1", "9007"]
+      interval: 3s
+      timeout: 1s
+      retries: 20
   db:
     image: mariadb:10.6
     environment:
@@ -9,7 +40,9 @@ services:
     volumes:
       - db_data:/var/lib/mysql
     networks:
-      - ms_network
+      ms_network:
+        aliases:
+          - db.ms.local
     hostname: db.ms.local
     ports:
       - 13306:3306
@@ -29,7 +62,9 @@ services:
       PMA_USER: root
       PMA_PASSWORD: 13152c0e-ce51-4e03-bebd-8e2c4fb359bf
     networks:
-      - ms_network
+      ms_network:
+        aliases:
+          - phpmyadmin.ms.local
     hostname: phpmyadmin.ms.local
     ports:
       - 13307:80
