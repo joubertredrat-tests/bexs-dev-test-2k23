@@ -5,14 +5,14 @@ type RequestValidationError struct {
 	Reason string `json:"reason"`
 }
 
-type CreatePartnerResponse struct {
+type PartnerResponse struct {
 	ID          string `json:"id"`
 	TradingName string `json:"trading_name"`
 	Document    string `json:"document"`
 	Currency    string `json:"currency"`
 }
 
-type CreatePaymentResponse struct {
+type PaymentResponse struct {
 	ID            string           `json:"id"`
 	PartnerID     string           `json:"partner_id"`
 	Amount        string           `json:"amount"`

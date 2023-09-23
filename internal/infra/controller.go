@@ -86,7 +86,7 @@ func (c PartnerController) HandleCreate(usecase application.UsecaseCreatePartner
 			return
 		}
 
-		ctx.JSON(http.StatusCreated, CreatePartnerResponse{
+		ctx.JSON(http.StatusCreated, PartnerResponse{
 			ID:          partner.ID,
 			TradingName: partner.TradingName,
 			Document:    partner.Document,
@@ -131,9 +131,9 @@ func (c PaymentController) HandleList(usecase application.UsecaseListPayments) g
 			return
 		}
 
-		response := []CreatePaymentResponse{}
+		response := []PaymentResponse{}
 		for _, payment := range payments {
-			response = append(response, CreatePaymentResponse{
+			response = append(response, PaymentResponse{
 				ID:            payment.ID,
 				PartnerID:     payment.PartnerID,
 				Amount:        payment.Amount.Value,
@@ -183,7 +183,7 @@ func (c PaymentController) HandleCreate(usecase application.UsecaseCreatePayment
 			return
 		}
 
-		ctx.JSON(http.StatusCreated, CreatePaymentResponse{
+		ctx.JSON(http.StatusCreated, PaymentResponse{
 			ID:            payment.ID,
 			PartnerID:     payment.PartnerID,
 			Amount:        payment.Amount.Value,
@@ -223,7 +223,7 @@ func (c PaymentController) HandleGet(usecase application.UsecaseGetPayment) gin.
 			return
 		}
 
-		ctx.JSON(http.StatusOK, CreatePaymentResponse{
+		ctx.JSON(http.StatusOK, PaymentResponse{
 			ID:            payment.ID,
 			PartnerID:     payment.PartnerID,
 			Amount:        payment.Amount.Value,
