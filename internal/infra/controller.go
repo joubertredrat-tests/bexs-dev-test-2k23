@@ -7,12 +7,20 @@ import (
 	"joubertredrat/bexs-dev-test-2k23/internal/domain"
 	"net/http"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
 	"github.com/go-playground/validator/v10"
+)
+
+const (
+	QUERY_STRING_OFFSET       = "offset"
+	QUERY_STRING_LIMIT        = "limit"
+	DEFAULT_PAGINATION_OFFSET = 1
+	DEFAULT_PAGINATION_LIMIT  = 10
 )
 
 type ApiBaseController struct {
@@ -92,6 +100,53 @@ type PaymentController struct {
 
 func NewPaymentController() PaymentController {
 	return PaymentController{}
+}
+
+func (c PaymentController) HandleList(usecase application.UsecaseListPayments) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		offset := ctx.DefaultQuery(QUERY_STRING_OFFSET, fmt.Sprintf("%d", DEFAULT_PAGINATION_OFFSET))
+		limit := ctx.DefaultQuery(QUERY_STRING_LIMIT, fmt.Sprintf("%d", DEFAULT_PAGINATION_LIMIT))
+		o64, err := strconv.ParseUint(offset, 10, 32)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid offset query string",
+			})
+			return
+		}
+		l64, err := strconv.ParseUint(limit, 10, 32)
+		if err != nil {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": "invalid limit query string",
+			})
+			return
+		}
+
+		pagination := domain.NewPagination(uint(o64), uint(l64))
+
+		payments, err := usecase.Execute(ctx, pagination)
+		if err != nil {
+			ctx.JSON(http.StatusInternalServerError, gin.H{
+				"error": "internal server error",
+			})
+			return
+		}
+
+		response := []CreatePaymentResponse{}
+		for _, payment := range payments {
+			response = append(response, CreatePaymentResponse{
+				ID:            payment.ID,
+				PartnerID:     payment.PartnerID,
+				Amount:        payment.Amount.Value,
+				ForeignAmount: payment.ForeignAmount.Value,
+				Consumer: ConsumerResponse{
+					Name:       payment.Consumer.Name,
+					NationalID: payment.Consumer.NationalID,
+				},
+			})
+		}
+
+		ctx.JSON(http.StatusOK, response)
+	}
 }
 
 func (c PaymentController) HandleCreate(usecase application.UsecaseCreatePayment) gin.HandlerFunc {

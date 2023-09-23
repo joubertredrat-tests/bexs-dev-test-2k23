@@ -42,6 +42,7 @@ func getApiCommand() *cli.Command {
 			exchangeStatic := infra.NewExchangeStatic(config.RateUsd, config.RateEur, config.RateGbp)
 
 			usecaseCreatePartner := application.NewUsecaseCreatePartner(partnerRepository)
+			usecaseListPayments := application.NewUsecaseListPayments(paymentRepository)
 			usecaseCreatePayment := application.NewUsecaseCreatePayment(
 				partnerRepository,
 				paymentRepository,
@@ -67,6 +68,7 @@ func getApiCommand() *cli.Command {
 				)
 				rp := ra.Group("/payments")
 				{
+					rp.GET("", paymentController.HandleList(usecaseListPayments))
 					rp.POST(
 						"",
 						infra.JSONBodyMiddleware(),
