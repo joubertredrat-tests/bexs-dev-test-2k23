@@ -41,6 +41,20 @@ func TestCurrency(t *testing.T) {
 	}
 }
 
+func TestPartner(t *testing.T) {
+	idExpected := "1"
+	tradingNameExpected := "International Ecommerce"
+	documentExpected := "1284498339812/0001"
+	currencyExpected, _ := domain.NewCurrency(domain.CURRENCY_USD)
+
+	partnerGot := domain.NewPartner(idExpected, tradingNameExpected, documentExpected, currencyExpected)
+
+	assert.Equal(t, idExpected, partnerGot.ID)
+	assert.Equal(t, tradingNameExpected, partnerGot.TradingName)
+	assert.Equal(t, documentExpected, partnerGot.Document)
+	assert.Equal(t, currencyExpected, partnerGot.Currency)
+}
+
 func TestAmount(t *testing.T) {
 	tests := []struct {
 		name           string

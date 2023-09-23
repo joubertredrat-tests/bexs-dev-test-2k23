@@ -68,6 +68,20 @@ func TestUsecaseCreatePartner(t *testing.T) {
 			errExpected: nil,
 		},
 		{
+			name: "Test create partner with invalid currency",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				return mock.NewMockPartnerRepository(ctrl)
+			},
+			input: application.UsecaseCreatePartnerInput{
+				ID:          "10",
+				TradingName: "International Ecommerce",
+				Document:    "1284498339812/0001",
+				Currency:    "BRL",
+			},
+			partnerExpected: domain.Partner{},
+			errExpected:     domain.NewErrInvalidCurrency("BRL", domain.Currencies()),
+		},
+		{
 			name: "Test create partner with unknown error on get by id from repository",
 			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
 				repository := mock.NewMockPartnerRepository(ctrl)
@@ -325,6 +339,344 @@ func TestUsecaseCreatePayment(t *testing.T) {
 					Value: "470.49",
 				},
 			},
+			errExpected: nil,
+		},
+		{
+			name: "Test create payment with invalid consumer national ID",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				return mock.NewMockPartnerRepository(ctrl)
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				return mock.NewMockPaymentRepository(ctrl)
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				return mock.NewMockExchange(ctrl)
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "302434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("Consumer national ID expect 11 digits, got [ 302434597 ]"),
+		},
+		{
+			name: "Test create payment with invalid amount",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				return mock.NewMockPartnerRepository(ctrl)
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				return mock.NewMockPaymentRepository(ctrl)
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				return mock.NewMockExchange(ctrl)
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "990.5",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("Amount expect valid value, got [ 990.5 ]"),
+		},
+		{
+			name: "Test create payment with unknown error on get by id from partner repository",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{}, errors.New("database gone")).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				return mock.NewMockPaymentRepository(ctrl)
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				return mock.NewMockExchange(ctrl)
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("database gone"),
+		},
+		{
+			name: "Test create payment with partner ID not found from repository",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{}, nil).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				return mock.NewMockPaymentRepository(ctrl)
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				return mock.NewMockExchange(ctrl)
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     application.NewErrPartnerNotFound("10"),
+		},
+		{
+			name: "Test create payment with unknown error from exchange convert",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{
+						ID:          "10",
+						TradingName: "International Ecommerce",
+						Document:    "1284498339812/0001",
+						Currency: domain.Currency{
+							Value: "USD",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				return mock.NewMockPaymentRepository(ctrl)
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				exchange := mock.NewMockExchange(ctrl)
+
+				amount, _ := domain.NewAmount("99.05")
+				currency, _ := domain.NewCurrency("USD")
+
+				exchange.
+					EXPECT().
+					Convert(gomock.Any(), gomock.Eq(amount), gomock.Eq(currency)).
+					Return(domain.Amount{}, errors.New("service down")).
+					Times(1)
+
+				return exchange
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("service down"),
+		},
+		{
+			name: "Test create payment with unknown error on get duplicated from payment repository",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{
+						ID:          "10",
+						TradingName: "International Ecommerce",
+						Document:    "1284498339812/0001",
+						Currency: domain.Currency{
+							Value: "USD",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetDuplicated(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{}), gomock.AssignableToTypeOf(time.Time{})).
+					Return(domain.Payment{}, errors.New("database gone")).
+					Times(1)
+
+				return repository
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				exchange := mock.NewMockExchange(ctrl)
+
+				amount, _ := domain.NewAmount("99.05")
+				currency, _ := domain.NewCurrency("USD")
+
+				exchange.
+					EXPECT().
+					Convert(gomock.Any(), gomock.Eq(amount), gomock.Eq(currency)).
+					Return(domain.Amount{
+						Value: "470.49",
+					}, nil).
+					Times(1)
+
+				return exchange
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("database gone"),
+		},
+		{
+			name: "Test create payment with duplicated payment found",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{
+						ID:          "10",
+						TradingName: "International Ecommerce",
+						Document:    "1284498339812/0001",
+						Currency: domain.Currency{
+							Value: "USD",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetDuplicated(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{}), gomock.AssignableToTypeOf(time.Time{})).
+					Return(domain.Payment{
+						ID:        "01HAW44PR1XK7B027RSFE8SAAY",
+						PartnerID: "10",
+						Consumer: domain.Consumer{
+							Name:       "Oliver Tsubasa",
+							NationalID: "30243434597",
+						},
+						Amount: domain.Amount{
+							Value: "99.05",
+						},
+						ForeignAmount: domain.Amount{
+							Value: "470.49",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				exchange := mock.NewMockExchange(ctrl)
+
+				amount, _ := domain.NewAmount("99.05")
+				currency, _ := domain.NewCurrency("USD")
+
+				exchange.
+					EXPECT().
+					Convert(gomock.Any(), gomock.Eq(amount), gomock.Eq(currency)).
+					Return(domain.Amount{
+						Value: "470.49",
+					}, nil).
+					Times(1)
+
+				return exchange
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     application.NewErrPaymentDuplicated("10", "30243434597", "99.05"),
+		},
+		{
+			name: "Test create payment with unknown error on create from payment repository",
+			partnerRepository: func(ctrl *gomock.Controller) domain.PartnerRepository {
+				repository := mock.NewMockPartnerRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetByID(gomock.Any(), gomock.Eq("10")).
+					Return(domain.Partner{
+						ID:          "10",
+						TradingName: "International Ecommerce",
+						Document:    "1284498339812/0001",
+						Currency: domain.Currency{
+							Value: "USD",
+						},
+					}, nil).
+					Times(1)
+
+				return repository
+			},
+			paymentRepository: func(ctrl *gomock.Controller) domain.PaymentRepository {
+				repository := mock.NewMockPaymentRepository(ctrl)
+
+				repository.
+					EXPECT().
+					GetDuplicated(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{}), gomock.AssignableToTypeOf(time.Time{})).
+					Return(domain.Payment{}, nil).
+					Times(1)
+
+				repository.
+					EXPECT().
+					Create(gomock.Any(), gomock.AssignableToTypeOf(domain.Payment{})).
+					Return(domain.Payment{}, errors.New("database gone")).
+					Times(1)
+
+				return repository
+			},
+			exchange: func(ctrl *gomock.Controller) domain.Exchange {
+				exchange := mock.NewMockExchange(ctrl)
+
+				amount, _ := domain.NewAmount("99.05")
+				currency, _ := domain.NewCurrency("USD")
+
+				exchange.
+					EXPECT().
+					Convert(gomock.Any(), gomock.Eq(amount), gomock.Eq(currency)).
+					Return(domain.Amount{
+						Value: "470.49",
+					}, nil).
+					Times(1)
+
+				return exchange
+			},
+			duplicatedSeconds: 120,
+			input: application.UsecaseCreatePaymentInput{
+				PartnerID:          "10",
+				Amount:             "99.05",
+				ConsumerName:       "Oliver Tsubasa",
+				ConsumerNationalID: "30243434597",
+			},
+			paymentExpected: domain.Payment{},
+			errExpected:     errors.New("database gone"),
 		},
 	}
 

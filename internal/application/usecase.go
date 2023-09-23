@@ -64,14 +64,6 @@ func NewUsecaseCreatePayment(
 }
 
 func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePaymentInput) (domain.Payment, error) {
-	partnerGot, err := u.partnerRepository.GetByID(ctx, input.PartnerID)
-	if err != nil {
-		return domain.Payment{}, err
-	}
-	if partnerGot.ID != input.PartnerID {
-		return domain.Payment{}, NewErrPartnerNotFound(input.PartnerID)
-	}
-
 	consumer, err := domain.NewConsumer(input.ConsumerName, input.ConsumerNationalID)
 	if err != nil {
 		return domain.Payment{}, err
@@ -81,6 +73,15 @@ func (u UsecaseCreatePayment) Execute(ctx context.Context, input UsecaseCreatePa
 	if err != nil {
 		return domain.Payment{}, err
 	}
+
+	partnerGot, err := u.partnerRepository.GetByID(ctx, input.PartnerID)
+	if err != nil {
+		return domain.Payment{}, err
+	}
+	if partnerGot.ID != input.PartnerID {
+		return domain.Payment{}, NewErrPartnerNotFound(input.PartnerID)
+	}
+
 	foreignAmount, err := u.exchange.Convert(ctx, amount, partnerGot.Currency)
 	if err != nil {
 		return domain.Payment{}, err
