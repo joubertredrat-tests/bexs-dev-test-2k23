@@ -141,6 +141,46 @@ func (c PaymentController) HandleCreate(usecase application.UsecaseCreatePayment
 	}
 }
 
+func (c PaymentController) HandleGet(usecase application.UsecaseGetPayment) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		ID := ctx.Param("id")
+		if ID == "" {
+			ctx.JSON(http.StatusBadRequest, gin.H{
+				"error": "Payment ID required",
+			})
+			return
+		}
+
+		payment, err := usecase.Execute(ctx, ID)
+
+		if err != nil {
+			fmt.Println(err)
+			switch err.(type) {
+			case application.ErrPaymentNotFound:
+				ctx.JSON(http.StatusNotFound, gin.H{
+					"error": err.Error(),
+				})
+			default:
+				ctx.JSON(http.StatusInternalServerError, gin.H{
+					"error": "internal server error",
+				})
+			}
+			return
+		}
+
+		ctx.JSON(http.StatusOK, CreatePaymentResponse{
+			ID:            payment.ID,
+			PartnerID:     payment.PartnerID,
+			Amount:        payment.Amount.Value,
+			ForeignAmount: payment.ForeignAmount.Value,
+			Consumer: ConsumerResponse{
+				Name:       payment.Consumer.Name,
+				NationalID: payment.Consumer.NationalID,
+			},
+		})
+	}
+}
+
 func RegisterCustomValidator() {
 	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterTagNameFunc(func(fld reflect.StructField) string {

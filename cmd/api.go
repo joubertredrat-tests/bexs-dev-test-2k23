@@ -48,6 +48,7 @@ func getApiCommand() *cli.Command {
 				exchangeStatic,
 				config.PaymentDuplicatedSeconds,
 			)
+			usecaseGetPayment := application.NewUsecaseGetPayment(paymentRepository)
 
 			apiBaseController := infra.NewApiBaseController()
 			partnerController := infra.NewPartnerController()
@@ -71,6 +72,7 @@ func getApiCommand() *cli.Command {
 						infra.JSONBodyMiddleware(),
 						paymentController.HandleCreate(usecaseCreatePayment),
 					)
+					rp.GET("/:id", paymentController.HandleGet(usecaseGetPayment))
 				}
 			}
 
